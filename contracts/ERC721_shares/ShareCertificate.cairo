@@ -51,10 +51,6 @@ end
 #
 
 @storage_var
-func _certificate_id_count() -> (res : Uint256):
-end
-
-@storage_var
 func _certificate_id(owner : felt) -> (token_id : Uint256):
 end
 
@@ -288,7 +284,7 @@ func mint{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
     guild : felt, owner : felt, share : Uint256
 ):
     # todo check guild is caller
-    let (certificate_id) = _certificate_id_count.read()
+    let (certificate_id) = _certificate_id.read(owner)
     let (new_certificate_id, _) = uint256_add(certificate_id, Uint256(1, 0))
     let data = CertificateData(token_id=new_certificate_id, share=share, owner=owner, guild=guild)
     _certificate_id.write(owner, new_certificate_id)
@@ -298,6 +294,7 @@ func mint{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
     let (new_total_shares, _) = uint256_add(current_total_shares, share)
     _total_shares.write(new_total_shares)
     ERC721_mint(owner, new_certificate_id)
+    add_guild_to_user(owner, guild)
     return ()
 end
 
