@@ -1,5 +1,7 @@
 ### Nile ###
+artifacts/
 artifacts
+./artifacts
 *.deployments.txt
 node.json
 
