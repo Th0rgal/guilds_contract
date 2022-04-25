@@ -167,12 +167,6 @@ async def test_deployed_shared_wallet(contract_factory):
         shared_wallet,
     ) = contract_factory
 
-    execution_info = await shared_wallet.get_whitelisted().call()
-    assert execution_info.result.whitelisted == [
-        account1.contract_address,
-        account2.contract_address,
-    ]
-
     execution_info = await shared_wallet.get_tokens().call()
     assert execution_info.result.tokens == [
         erc20_1.contract_address,
