@@ -149,7 +149,6 @@ async def contract_factory():
         account2,
         erc20_1,
         erc20_2,
-        oracle,
         share_certificate,
         shared_wallet,
     )
@@ -164,7 +163,6 @@ async def test_deployed_shared_wallet(contract_factory):
         account2,
         erc20_1,
         erc20_2,
-        oracle,
         share_certificate,
         shared_wallet,
     ) = contract_factory
