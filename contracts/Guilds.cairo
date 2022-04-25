@@ -64,6 +64,11 @@ end
 #
 
 @view
+func get_extensions_number{}() -> (nb: felt):
+    return (1)
+end
+
+@view
 func get_is_whitelisted{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
     whitelisted_user_address : felt
 ) -> (value : felt):
