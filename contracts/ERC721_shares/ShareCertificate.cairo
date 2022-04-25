@@ -43,6 +43,7 @@ struct CertificateData:
     member token_id : Uint256
     member share : Uint256
     member owner : felt
+    member guild : felt
 end
 
 #
@@ -242,7 +243,7 @@ func mint{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
     # todo check guild is caller
     let (certificate_id) = _certificate_id_count.read()
     let (new_certificate_id, _) = uint256_add(certificate_id, Uint256(1, 0))
-    let data = CertificateData(token_id=new_certificate_id, share=share, owner=owner)
+    let data = CertificateData(token_id=new_certificate_id, share=share, owner=owner, guild=guild)
     _certificate_id.write(owner, new_certificate_id)
     _certificate_data.write(new_certificate_id, data)
     _share.write(new_certificate_id, share)
