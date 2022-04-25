@@ -79,7 +79,6 @@ func get_whitelisted_len{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range
     return (whitelisted_len=whitelisted_len)
 end
 
-@view
 func _get_whitelisted{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
     whitelisted_index : felt, whitelisted_len : felt, whitelisted : felt*
 ):
@@ -114,7 +113,6 @@ func get_whitelisted{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_che
     return (whitelisted_len=whitelisted_len, whitelisted=whitelisted)
 end
 
-@view
 func _get_tokens{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
     tokens_index : felt, tokens_len : felt, tokens : felt*
 ):
@@ -648,7 +646,6 @@ func get_minimum_amount{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_
     return (minimum=new_minimum)
 end
 
-@view
 func _get_minimum_amount{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
     amounts_index : felt, amounts_len : felt, amounts : Uint256*, minimum : Uint256
 ) -> (new_minimum : Uint256):
