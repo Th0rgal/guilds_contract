@@ -58,10 +58,6 @@ end
 func _share_certificate() -> (res : felt):
 end
 
-@storage_var
-func _price_oracle() -> (res : felt):
-end
-
 #
 # Getters
 #
@@ -201,7 +197,8 @@ func constructor{
         owners : felt*,
         tokens_len : felt,
         tokens : felt*,
-        oracle : felt,
+        token_weights_len : felt,
+        token_weights : felt*,
         share_certificate : felt
     ):
 
@@ -209,7 +206,6 @@ func constructor{
     _set_owners(owners_index=0, owners_len=owners_len, owners=owners)
     _tokens_len.write(value=tokens_len)
     _set_tokens(tokens_index=0, tokens_len=tokens_len, tokens=tokens)
-    _price_oracle.write(oracle)
     _share_certificate.write(share_certificate)
     return ()
 end
@@ -405,73 +401,6 @@ end
 #
 # Internals
 #
-
-@view
-func get_total_usd_amount{
-        syscall_ptr : felt*,
-        pedersen_ptr : HashBuiltin*,
-        range_check_ptr
-    }(
-        tokens_len : felt,
-        tokens : felt*,
-        amounts_len : felt,
-        amounts : Uint256*
-    ) -> (
-        total_amount : Uint256
-    ):
-    if amounts_len == 0:
-        return (total_amount=Uint256(0,0))
-    end
-
-    let (total_amount) = _get_total_usd_amount(
-        tokens_index=0,
-        tokens_len=tokens_len,
-        tokens=tokens, 
-        amounts_len=amounts_len, 
-        amounts=amounts, 
-        total_amount=Uint256(0,0)
-    )
-    return (total_amount=total_amount)
-end
-
-func _get_total_usd_amount{
-        syscall_ptr : felt*,
-        pedersen_ptr : HashBuiltin*,
-        range_check_ptr
-    }(
-        tokens_index : felt,
-        tokens_len : felt,
-        tokens : felt*,
-        amounts_len : felt,
-        amounts : Uint256*,
-        total_amount : Uint256
-    ) -> (
-        new_amount : Uint256
-    ):
-    alloc_locals
-    if tokens_index == amounts_len:
-        return (new_amount=total_amount)
-    end
-    let (oracle) = _price_oracle.read()
-
-    let (local token_price, token_price_decimals) = IPriceAggregator.get_data(contract_address=oracle, token=tokens[tokens_index])
-    let (check_fund_token_units) = pow(10,token_price_decimals)
-    let token_price_units_uint: Uint256 = Uint256(check_fund_token_units,0)
-    let (token_price_units, _) = uint256_unsigned_div_rem(token_price, token_price_units_uint)
-
-    let (token_usd_amount, _) = uint256_mul(amounts[tokens_index], token_price_units)
-    let (new_amount, _) = uint256_add(total_amount, token_usd_amount)
-    let (new_amount) = _get_total_usd_amount(
-        tokens_index=tokens_index + 1,
-        tokens_len=tokens_len,
-        tokens=tokens,
-        amounts_len=amounts_len,
-        amounts=amounts, 
-        total_amount=new_amount
-    )
-    return (new_amount)
-
-end
 
 func _modify_position_add{
         syscall_ptr : felt*,
