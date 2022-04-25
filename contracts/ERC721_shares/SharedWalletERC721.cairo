@@ -424,12 +424,6 @@ func add_funds{
     with_attr error_message("SW Error: Tokens length does not match amounts"):
         assert tokens_len = amounts_len
     end
-    # check_weighting(
-    #     tokens_len=tokens_len, 
-    #     tokens=tokens, 
-    #     amounts_len=amounts_len,
-    #     amounts=amounts
-    # )
     let (caller_address) = get_caller_address()
     let (contract_address) = get_contract_address()
 
@@ -543,85 +537,6 @@ end
 #
 # Internals
 #
-
-@external
-func check_weighting{
-        syscall_ptr : felt*,
-        pedersen_ptr : HashBuiltin*,
-        range_check_ptr
-    }(
-        tokens_len : felt,
-        tokens : felt*,
-        amounts_len : felt,
-        amounts : Uint256*
-    ):
-    alloc_locals
-    let (total_weight) = get_total_weight()
-    _check_weighting(
-        tokens_index=0, 
-        tokens_len=tokens_len,
-        tokens=tokens,
-        amounts_len=amounts_len,
-        amounts=amounts,
-        total_weight=total_weight
-    )
-    return ()
-end
-
-func _check_weighting{
-        syscall_ptr : felt*,
-        pedersen_ptr : HashBuiltin*,
-        range_check_ptr
-    }(
-        tokens_index : felt,
-        tokens_len : felt,
-        tokens : felt*,
-        amounts_len : felt,
-        amounts : Uint256*,
-        total_weight : felt
-    ):
-    alloc_locals
-    if tokens_index == tokens_len:
-        return ()
-    end
-    let (oracle) = _price_oracle.read()
-    let (total_usd_amount) = get_total_usd_amount(
-        tokens_len=tokens_len, 
-        tokens=tokens, 
-        amounts_len=amounts_len, 
-        amounts=amounts
-    )
-    let (token_decimals) = IERC20.decimals(contract_address=tokens[tokens_index])
-
-    let (fund_token_weight) = _token_weights.read(token=tokens[tokens_index])
-    let (check_fund_token_weight) = Math64x61_div(fund_token_weight, total_weight)
-    let (check_fund_token_units) = pow(10,token_decimals)
-    let (check_fund_token) = Math64x61_mul(check_fund_token_weight, check_fund_token_units)
-    
-    let (token_price, token_price_decimals) = IPriceAggregator.get_data(contract_address=oracle, token=tokens[tokens_index])
-    let (check_fund_token_units) = pow(10,token_price_decimals)
-    let token_price_units_uint: Uint256 = Uint256(check_fund_token_units,0)
-    let (token_price_units, _) = uint256_unsigned_div_rem(token_price, token_price_units_uint)
-
-    let (token_usd_amount, _) = uint256_mul(amounts[tokens_index], token_price_units)
-    let (total_usd, _) = uint256_unsigned_div_rem(total_usd_amount, token_price_units_uint)
-    let (check_added_token_weight, _) = uint256_unsigned_div_rem(token_usd_amount, total_usd)
-    let check_fund_token_weight_uint: Uint256 = Uint256(check_fund_token,0)
-    let (check_equal) = uint256_eq(check_fund_token_weight_uint, check_added_token_weight)
-    with_attr error_message("SW Error: Added funds weighting does not equal required weights"):
-        assert check_equal = TRUE
-    end
-
-    _check_weighting(
-        tokens_index=tokens_index + 1, 
-        tokens_len=tokens_len, 
-        tokens=tokens, 
-        amounts_len=amounts_len, 
-        amounts=amounts, 
-        total_weight=total_weight
-    )
-    return()
-end
 
 @view
 func get_total_usd_amount{
