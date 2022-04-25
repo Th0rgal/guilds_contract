@@ -25,7 +25,7 @@ SHARE_CERTIFICATE_CONTRACT_FILE = os.path.join(
 #     "contracts/upgrades", "SharedWalletFactory.cairo"
 # )
 SHARED_WALLET_CONTRACT_FILE = os.path.join(
-    "contracts/ERC721_shares", "SharedWalletERC721.cairo"
+    "contracts/ERC721_shares", "Guild.cairo"
 )
 
 
