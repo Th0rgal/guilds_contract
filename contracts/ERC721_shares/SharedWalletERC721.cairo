@@ -138,8 +138,9 @@ func mint{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}():
     only_in_whitelisted()
     let (share_certificate) = _share_certificate.read()
     let (caller_address) = get_caller_address()
+    let (guild) = get_contract_address()
     IShareCertificate.mint(
-        contract_address=share_certificate, owner=caller_address, share=Uint256(0, 7)
+        contract_address=share_certificate, guild=guild, owner=caller_address, share=Uint256(0, 7)
     )
     _is_whitelisted_user.write(caller_address, FALSE)
     return ()
@@ -312,12 +313,16 @@ func _modify_position_add{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, rang
         tokens_len=tokens_len, tokens=tokens, amounts_len=amounts_len, amounts=amounts
     )
 
+    let (guild) = get_contract_address()
+
     if check_supply_zero == TRUE:
-        IShareCertificate.mint(contract_address=share_certificate, owner=user, share=initial_share)
+        IShareCertificate.mint(
+            contract_address=share_certificate, guild=guild, owner=user, share=initial_share
+        )
     else:
         if check_share_zero == TRUE:
             IShareCertificate.mint(
-                contract_address=share_certificate, owner=user, share=added_share
+                contract_address=share_certificate, guild=guild, owner=user, share=added_share
             )
         else:
             IShareCertificate.increase_shares(
