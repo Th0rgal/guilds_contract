@@ -279,22 +279,59 @@ func transfer_ownership{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_
     return ()
 end
 
+func _write_certificate_data_field{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
+    field_len: felt,
+    field: felt*,
+    values_len: felt,
+    values: felt*,
+    token_id: Uint256,
+    ):
+    
+    if field_len == 0:
+        return ()
+    end
+
+    _certificate_data_field.write(token_id, [field], [values])
+
+    _write_certificate_data_field(
+        field_len=field_len-1,
+        field=field + 1,
+        values_len=values_len-1,
+        values=values + 1,
+        token_id=token_id,
+
+    )
+    return ()
+end
+
 @external
 func mint{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
-    guild : felt, owner : felt, share : Uint256
+    guild : felt,
+    owner : felt,
+    share : Uint256,
+    field_len : felt,
+    field : felt*,
+    values_len : felt,
+    values : felt* 
 ):
+    alloc_locals
+    
+    with_attr error_message("SW Error: field and values length must be the same"):
+        assert field_len = values_len
+    end
+
     # todo check guild is caller
     let (certificate_id) = _certificate_id.read(owner)
     let (new_certificate_id, _) = uint256_add(certificate_id, Uint256(1, 0))
     let data = CertificateData(token_id=new_certificate_id, share=share, owner=owner, guild=guild)
     _certificate_id.write(owner, new_certificate_id)
     _certificate_data.write(new_certificate_id, data)
+    _write_certificate_data_field(field_len, field, values_len, values, new_certificate_id)
     _share.write(new_certificate_id, share)
     let (current_total_shares) = _total_shares.read()
     let (new_total_shares, _) = uint256_add(current_total_shares, share)
     _total_shares.write(new_total_shares)
     ERC721_mint(owner, new_certificate_id)
-    add_guild_to_user(owner, guild)
     return ()
 end
 

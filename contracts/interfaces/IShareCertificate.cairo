@@ -13,7 +13,7 @@ namespace IShareCertificate:
     func get_total_shares() -> (total_shares : Uint256):
     end
 
-    func mint(guild : felt, owner : felt, share : Uint256):
+    func mint(guild : felt, owner : felt, share : Uint256, field_len : felt, field : felt*, values_len : felt, values : felt*):
     end
 
     func burn(owner : felt):

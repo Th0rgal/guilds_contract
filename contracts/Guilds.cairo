@@ -134,13 +134,19 @@ func constructor{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_p
 end
 
 @external
-func mint{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}():
+func mint{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
+    field_len : felt,
+    field : felt*,
+    values_len : felt,
+    values : felt*,
+):
+    alloc_locals
     only_in_whitelisted()
     let (share_certificate) = _share_certificate.read()
     let (caller_address) = get_caller_address()
     let (guild) = get_contract_address()
     IShareCertificate.mint(
-        contract_address=share_certificate, guild=guild, owner=caller_address, share=Uint256(0, 7)
+        contract_address=share_certificate, guild=guild, owner=caller_address, share=Uint256(0, 7), field_len=field_len, field=field, values_len=values_len, values=values
     )
     _is_whitelisted_user.write(caller_address, FALSE)
     return ()
@@ -317,13 +323,13 @@ func _modify_position_add{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, rang
 
     if check_supply_zero == TRUE:
         IShareCertificate.mint(
-            contract_address=share_certificate, guild=guild, owner=user, share=initial_share
+            contract_address=share_certificate, guild=guild, owner=user, share=initial_share, field_len=0, field=cast(0, felt*), values_len=0, values=cast(0, felt*)
         )
     else:
         if check_share_zero == TRUE:
             IShareCertificate.mint(
-                contract_address=share_certificate, guild=guild, owner=user, share=added_share
-            )
+            contract_address=share_certificate, guild=guild, owner=user, share=initial_share, field_len=0, field=cast(0, felt*), values_len=0, values=cast(0, felt*)
+        )
         else:
             IShareCertificate.increase_shares(
                 contract_address=share_certificate, owner=user, amount=added_share
