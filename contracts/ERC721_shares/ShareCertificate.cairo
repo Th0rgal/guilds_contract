@@ -74,6 +74,53 @@ end
 func _total_shares() -> (res : Uint256):
 end
 
+@storage_var
+func _user_guilds(player : felt, index : felt) -> (guild_contract : felt):
+end
+
+@storage_var
+func _user_guilds_len(user : felt) -> (size : felt):
+end
+
+func _get_user_guilds{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
+    user : felt, guild_index : felt, guilds_len : felt, guilds : felt*
+):
+    if guild_index == guilds_len:
+        return ()
+    end
+
+    let (guild_contract) = _user_guilds.read(user, guild_index)
+    assert guilds[guild_index] = guild_contract
+
+    _get_user_guilds(user, guild_index + 1, guilds_len, guilds)
+    return ()
+end
+
+@view
+func get_user_guilds{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
+    user : felt
+) -> (guilds_len : felt, guilds : felt*):
+    alloc_locals
+    let (guilds) = alloc()
+    let (guilds_len) = _user_guilds_len.read(user)
+    if guilds_len == 0:
+        return (guilds_len, guilds)
+    end
+
+    # Recursively add colonies id from storage to the colonies array
+    _get_user_guilds(user, 0, guilds_len, guilds)
+    return (guilds_len, guilds)
+end
+
+func add_guild_to_user{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
+    user : felt, guild : felt
+) -> ():
+    let (id) = _user_guilds_len.read(user)
+    _user_guilds_len.write(user, id + 1)
+    _user_guilds.write(user, id, guild)
+    return ()
+end
+
 #
 # Getters
 #
