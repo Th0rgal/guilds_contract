@@ -78,22 +78,6 @@ async def contract_factory():
         ],
     )
 
-    # Deploy mock oracle.
-    # ERC20_1 with price $4000
-    # ERC20_2 with price $1
-
-    oracle = await starknet.deploy(
-        source=PRICE_AGGREGATOR_CONTRACT_FILE,
-        constructor_calldata=[
-            2,
-            erc20_1.contract_address,
-            erc20_2.contract_address,
-            2,
-            *ERC20_1_price,
-            *ERC20_2_price,
-        ],
-    )
-
     # Deploy token to distribute shares
 
     share_certificate = await starknet.deploy(
@@ -146,7 +130,6 @@ async def contract_factory():
             2,
             1,
             1,
-            oracle.contract_address,
             share_certificate.contract_address,
         ],
     )
@@ -186,8 +169,8 @@ async def test_deployed_shared_wallet(contract_factory):
         shared_wallet,
     ) = contract_factory
 
-    execution_info = await shared_wallet.get_owners().call()
-    assert execution_info.result.owners == [
+    execution_info = await shared_wallet.get_whitelisted().call()
+    assert execution_info.result.whitelisted == [
         account1.contract_address,
         account2.contract_address,
     ]
@@ -198,30 +181,8 @@ async def test_deployed_shared_wallet(contract_factory):
         erc20_2.contract_address,
     ]
 
-
 @pytest.mark.asyncio
-async def test_oracle(contract_factory):
-    """Test oracle functions."""
-    (
-        starknet,
-        account1,
-        account2,
-        erc20_1,
-        erc20_2,
-        oracle,
-        share_certificate,
-        shared_wallet,
-    ) = contract_factory
-
-    execution_info = await oracle.get_data(erc20_1.contract_address).call()
-    assert execution_info.result == (ERC20_1_price, 18)
-
-    execution_info = await oracle.get_data(erc20_2.contract_address).call()
-    assert execution_info.result == (ERC20_2_price, 18)
-
-
-@pytest.mark.asyncio
-async def test_add_owner(contract_factory):
+async def test_whitelist(contract_factory):
     """Test add owners of shared wallet."""
     (
         starknet,
@@ -229,7 +190,6 @@ async def test_add_owner(contract_factory):
         account2,
         erc20_1,
         erc20_2,
-        oracle,
         share_certificate,
         shared_wallet,
     ) = contract_factory
@@ -244,11 +204,11 @@ async def test_add_owner(contract_factory):
     await signer1.send_transaction(
         account=account1,
         to=shared_wallet.contract_address,
-        selector_name="add_owners",
+        selector_name="add_whitelisted",
         calldata=[1, account3.contract_address],
     )
 
-    execution_info = await shared_wallet.get_is_owner(account3.contract_address).call()
+    execution_info = await shared_wallet.get_is_whitelisted(account3.contract_address).call()
     assert execution_info.result == (1,)
 
 
@@ -261,7 +221,6 @@ async def test_add_funds(contract_factory):
         account2,
         erc20_1,
         erc20_2,
-        oracle,
         share_certificate,
         shared_wallet,
     ) = contract_factory
@@ -350,7 +309,6 @@ async def test_remove_funds(contract_factory):
         account2,
         erc20_1,
         erc20_2,
-        oracle,
         share_certificate,
         shared_wallet,
     ) = contract_factory

@@ -180,38 +180,16 @@ func constructor{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_p
     return ()
 end
 
-# # Function to be implemented when factories available
-# func shared_wallet_initializer{
-#         syscall_ptr : felt*,
-#         pedersen_ptr : HashBuiltin*,
-#         range_check_ptr,
-#     }(
-#         whitelisted_len : felt,
-#         whitelisted : felt*,
-#         tokens_len : felt,
-#         tokens : felt*,
-#         token_weights_len : felt,
-#         token_weights : felt*,
-#         oracle : felt,
-#         share_certificate : felt
-#     ):
-#     with_attr error_message("SW Error: Tokens length not equal to weights length"):
-#         assert tokens_len = token_weights_len
-#     end
-#     _whitelisted_len.write(value=whitelisted_len)
-#     _set_whitelisted(whitelisted_index=0, whitelisted_len=whitelisted_len, whitelisted=whitelisted)
-#     _tokens_len.write(value=tokens_len)
-#     _set_tokens(tokens_index=0, tokens_len=tokens_len, tokens=tokens)
-#     _set_token_weights(
-#         tokens_index=0,
-#         tokens_len=tokens_len,
-#         tokens=tokens,
-#         token_weights=token_weights
-#     )
-#     _price_oracle.write(oracle)
-#     _share_certificate.write(share_certificate)
-#     return ()
-# end
+@external
+func mint{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}():
+    only_in_whitelisted()
+    let (share_certificate) = _share_certificate.read()
+    let (caller_address) = get_caller_address()
+    IShareCertificate.mint(
+        contract_address=share_certificate, owner=caller_address, share=Uint256(0, 7)
+    )
+    return ()
+end
 
 @external
 func add_whitelisted{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
