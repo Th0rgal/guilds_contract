@@ -32,15 +32,15 @@ from contracts.libraries.Math64x61 import Math64x61_div, Math64x61_mul
 #
 
 @storage_var
-func _owners_len() -> (res : felt):
+func _whitelisted_len() -> (res : felt):
 end
 
 @storage_var
-func _owners(index : felt) -> (res : felt):
+func _whitelisted(index : felt) -> (res : felt):
 end
 
 @storage_var
-func _is_owner(owner : felt) -> (res : felt):
+func _is_whitelisted_user(whitelisted_user : felt) -> (res : felt):
 end
 
 @storage_var
@@ -64,50 +64,54 @@ end
 #
 
 @view
-func get_is_owner{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
-    owner_address : felt
+func get_is_whitelisted{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
+    whitelisted_user_address : felt
 ) -> (value : felt):
-    let (value) = _is_owner.read(owner_address)
+    let (value) = _is_whitelisted_user.read(whitelisted_user_address)
     return (value)
 end
 
 @view
-func get_owners_len{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}() -> (
-    owners_len : felt
+func get_whitelisted_len{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}() -> (
+    whitelisted_len : felt
 ):
-    let (owners_len) = _owners_len.read()
-    return (owners_len=owners_len)
+    let (whitelisted_len) = _whitelisted_len.read()
+    return (whitelisted_len=whitelisted_len)
 end
 
 @view
-func _get_owners{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
-    owners_index : felt, owners_len : felt, owners : felt*
+func _get_whitelisted{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
+    whitelisted_index : felt, whitelisted_len : felt, whitelisted : felt*
 ):
-    if owners_index == owners_len:
+    if whitelisted_index == whitelisted_len:
         return ()
     end
 
-    let (owner) = _owners.read(index=owners_index)
-    assert owners[owners_index] = owner
+    let (whitelisted_user) = _whitelisted.read(index=whitelisted_index)
+    assert whitelisted[whitelisted_index] = whitelisted_user
 
-    _get_owners(owners_index=owners_index + 1, owners_len=owners_len, owners=owners)
+    _get_whitelisted(
+        whitelisted_index=whitelisted_index + 1,
+        whitelisted_len=whitelisted_len,
+        whitelisted=whitelisted,
+    )
     return ()
 end
 
 @view
-func get_owners{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}() -> (
-    owners_len : felt, owners : felt*
+func get_whitelisted{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}() -> (
+    whitelisted_len : felt, whitelisted : felt*
 ):
     alloc_locals
-    let (owners) = alloc()
-    let (owners_len) = _owners_len.read()
-    if owners_len == 0:
-        return (owners_len=owners_len, owners=owners)
+    let (whitelisted) = alloc()
+    let (whitelisted_len) = _whitelisted_len.read()
+    if whitelisted_len == 0:
+        return (whitelisted_len=whitelisted_len, whitelisted=whitelisted)
     end
 
-    # Recursively add owners from storage to the owners array
-    _get_owners(owners_index=0, owners_len=owners_len, owners=owners)
-    return (owners_len=owners_len, owners=owners)
+    # Recursively add whitelisted from storage to the whitelisted array
+    _get_whitelisted(whitelisted_index=0, whitelisted_len=whitelisted_len, whitelisted=whitelisted)
+    return (whitelisted_len=whitelisted_len, whitelisted=whitelisted)
 end
 
 @view
@@ -145,11 +149,11 @@ end
 # Guards
 #
 
-func only_in_owners{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}():
+func only_in_whitelisted{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}():
     let (caller_address) = get_caller_address()
-    let (is_owner) = get_is_owner(caller_address)
-    with_attr error_message("Ownable: caller is not an owner"):
-        assert is_owner = TRUE
+    let (is_whitelisted_user) = get_is_whitelisted(caller_address)
+    with_attr error_message("Ownable: caller is not whitelisted"):
+        assert is_whitelisted_user = TRUE
     end
     return ()
 end
@@ -160,16 +164,16 @@ end
 
 @constructor
 func constructor{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
-    owners_len : felt,
-    owners : felt*,
+    whitelisted_len : felt,
+    whitelisted : felt*,
     tokens_len : felt,
     tokens : felt*,
     token_weights_len : felt,
     token_weights : felt*,
     share_certificate : felt,
 ):
-    _owners_len.write(value=owners_len)
-    _set_owners(owners_index=0, owners_len=owners_len, owners=owners)
+    _whitelisted_len.write(value=whitelisted_len)
+    _set_whitelisted(whitelisted_index=0, whitelisted_len=whitelisted_len, whitelisted=whitelisted)
     _tokens_len.write(value=tokens_len)
     _set_tokens(tokens_index=0, tokens_len=tokens_len, tokens=tokens)
     _share_certificate.write(share_certificate)
@@ -182,8 +186,8 @@ end
 #         pedersen_ptr : HashBuiltin*,
 #         range_check_ptr,
 #     }(
-#         owners_len : felt,
-#         owners : felt*,
+#         whitelisted_len : felt,
+#         whitelisted : felt*,
 #         tokens_len : felt,
 #         tokens : felt*,
 #         token_weights_len : felt,
@@ -194,8 +198,8 @@ end
 #     with_attr error_message("SW Error: Tokens length not equal to weights length"):
 #         assert tokens_len = token_weights_len
 #     end
-#     _owners_len.write(value=owners_len)
-#     _set_owners(owners_index=0, owners_len=owners_len, owners=owners)
+#     _whitelisted_len.write(value=whitelisted_len)
+#     _set_whitelisted(whitelisted_index=0, whitelisted_len=whitelisted_len, whitelisted=whitelisted)
 #     _tokens_len.write(value=tokens_len)
 #     _set_tokens(tokens_index=0, tokens_len=tokens_len, tokens=tokens)
 #     _set_token_weights(
@@ -210,19 +214,25 @@ end
 # end
 
 @external
-func add_owners{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
-    owners_len : felt, owners : felt*
+func add_whitelisted{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
+    whitelisted_len : felt, whitelisted : felt*
 ):
-    only_in_owners()
-    let (current_owners_len) = _owners_len.read()
-    _set_owners(
-        owners_index=current_owners_len, owners_len=current_owners_len + owners_len, owners=owners
+    only_in_whitelisted()
+    let (current_whitelisted_len) = _whitelisted_len.read()
+    _set_whitelisted(
+        whitelisted_index=current_whitelisted_len,
+        whitelisted_len=current_whitelisted_len + whitelisted_len,
+        whitelisted=whitelisted,
     )
     return ()
 end
 
 func _add_funds{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
-    tokens_index : felt, tokens_len : felt, tokens : felt*, amounts : Uint256*, owner : felt
+    tokens_index : felt,
+    tokens_len : felt,
+    tokens : felt*,
+    amounts : Uint256*,
+    whitelisted_user : felt,
 ):
     alloc_locals
     if tokens_index == tokens_len:
@@ -237,7 +247,7 @@ func _add_funds{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_pt
     let (contract_address) = get_contract_address()
     IERC20.transferFrom(
         contract_address=tokens[tokens_index],
-        sender=owner,
+        sender=whitelisted_user,
         recipient=contract_address,
         amount=amounts[tokens_index],
     )
@@ -247,7 +257,7 @@ func _add_funds{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_pt
         tokens_len=tokens_len,
         tokens=tokens,
         amounts=amounts,
-        owner=owner,
+        whitelisted_user=whitelisted_user,
     )
     return ()
 end
@@ -257,7 +267,7 @@ func add_funds{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr
     tokens_len : felt, tokens : felt*, amounts_len : felt, amounts : Uint256*
 ):
     alloc_locals
-    only_in_owners()
+    only_in_whitelisted()
     with_attr error_message("SW Error: Tokens length does not match amounts"):
         assert tokens_len = amounts_len
     end
@@ -265,11 +275,15 @@ func add_funds{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr
     let (contract_address) = get_contract_address()
 
     _add_funds(
-        tokens_index=0, tokens_len=tokens_len, tokens=tokens, amounts=amounts, owner=caller_address
+        tokens_index=0,
+        tokens_len=tokens_len,
+        tokens=tokens,
+        amounts=amounts,
+        whitelisted_user=caller_address,
     )
 
     _modify_position_add(
-        owner=caller_address,
+        user=caller_address,
         tokens_len=tokens_len,
         tokens=tokens,
         amounts_len=amounts_len,
@@ -296,8 +310,8 @@ func remove_funds{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_
         assert check_amount = TRUE
     end
     let (amounts_len, amounts) = calculate_tokens_from_share(share=amount)
-    distribute_amounts(owner=caller_address, amounts_len=amounts_len, amounts=amounts)
-    _modify_position_remove(owner=caller_address, share=amount)
+    distribute_amounts(whitelisted_user=caller_address, amounts_len=amounts_len, amounts=amounts)
+    _modify_position_remove(whitelisted_user=caller_address, share=amount)
     update_reserves()
     return ()
 end
@@ -306,19 +320,23 @@ end
 # Storage Helpers
 #
 
-func _set_owners{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
-    owners_index : felt, owners_len : felt, owners : felt*
+func _set_whitelisted{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
+    whitelisted_index : felt, whitelisted_len : felt, whitelisted : felt*
 ):
-    if owners_index == owners_len:
+    if whitelisted_index == whitelisted_len:
         return ()
     end
 
     # Write the current iteration to storage
-    _owners.write(index=owners_index, value=[owners])
-    _is_owner.write(owner=[owners], value=TRUE)
+    _whitelisted.write(index=whitelisted_index, value=[whitelisted])
+    _is_whitelisted_user.write(whitelisted_user=[whitelisted], value=TRUE)
 
     # Recursively write the rest
-    _set_owners(owners_index=owners_index + 1, owners_len=owners_len, owners=owners + 1)
+    _set_whitelisted(
+        whitelisted_index=whitelisted_index + 1,
+        whitelisted_len=whitelisted_len,
+        whitelisted=whitelisted + 1,
+    )
     return ()
 end
 
@@ -331,7 +349,7 @@ func _set_tokens{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_p
 
     # Write the current iteration to storage
     _tokens.write(index=tokens_index, value=[tokens])
-    _is_owner.write(owner=[tokens], value=TRUE)
+    _is_whitelisted_user.write(whitelisted_user=[tokens], value=TRUE)
 
     # Recursively write the rest
     _set_tokens(tokens_index=tokens_index + 1, tokens_len=tokens_len, tokens=tokens + 1)
@@ -343,14 +361,14 @@ end
 #
 
 func _modify_position_add{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
-    owner : felt, tokens_len : felt, tokens : felt*, amounts_len : felt, amounts : Uint256*
+    user : felt, tokens_len : felt, tokens : felt*, amounts_len : felt, amounts : Uint256*
 ):
     alloc_locals
     let (share_certificate) = _share_certificate.read()
     let (current_total_supply) = IShareCertificate.get_total_shares(
         contract_address=share_certificate
     )
-    let (share) = IShareCertificate.get_shares(contract_address=share_certificate, owner=owner)
+    let (share) = IShareCertificate.get_shares(contract_address=share_certificate, owner=user)
     let (check_supply_zero) = uint256_eq(current_total_supply, Uint256(0, 0))
     let (check_share_zero) = uint256_eq(current_total_supply, Uint256(0, 0))
     let (initial_share : Uint256) = calculate_initial_share(
@@ -361,15 +379,15 @@ func _modify_position_add{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, rang
     )
 
     if check_supply_zero == TRUE:
-        IShareCertificate.mint(contract_address=share_certificate, owner=owner, share=initial_share)
+        IShareCertificate.mint(contract_address=share_certificate, owner=user, share=initial_share)
     else:
         if check_share_zero == TRUE:
             IShareCertificate.mint(
-                contract_address=share_certificate, owner=owner, share=added_share
+                contract_address=share_certificate, owner=user, share=added_share
             )
         else:
             IShareCertificate.increase_shares(
-                contract_address=share_certificate, owner=owner, amount=added_share
+                contract_address=share_certificate, owner=user, amount=added_share
             )
         end
     end
@@ -377,19 +395,19 @@ func _modify_position_add{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, rang
 end
 
 func _modify_position_remove{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
-    owner : felt, share : Uint256
+    whitelisted_user : felt, share : Uint256
 ):
     alloc_locals
     let (share_certificate) = _share_certificate.read()
     let (current_shares) = IShareCertificate.get_shares(
-        contract_address=share_certificate, owner=owner
+        contract_address=share_certificate, owner=whitelisted_user
     )
     let (check_share) = uint256_le(current_shares, share)
     if check_share == TRUE:
-        IShareCertificate.burn(contract_address=share_certificate, owner=owner)
+        IShareCertificate.burn(contract_address=share_certificate, owner=whitelisted_user)
     else:
         IShareCertificate.decrease_shares(
-            contract_address=share_certificate, owner=owner, amount=share
+            contract_address=share_certificate, owner=whitelisted_user, amount=share
         )
     end
     return ()
@@ -748,36 +766,46 @@ func _get_token_reserves{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range
 end
 
 func distribute_amounts{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
-    owner : felt, amounts_len : felt, amounts : Uint256*
+    whitelisted_user : felt, amounts_len : felt, amounts : Uint256*
 ):
     if amounts_len == 0:
         return ()
     end
     let (token_len, tokens) = get_tokens()
 
-    # Recursively send tokens to the owner
+    # Recursively send tokens to the whitelisted_user
     _distribute_amounts(
-        amounts_index=0, amounts_len=amounts_len, amounts=amounts, owner=owner, tokens=tokens
+        amounts_index=0,
+        amounts_len=amounts_len,
+        amounts=amounts,
+        whitelisted_user=whitelisted_user,
+        tokens=tokens,
     )
     return ()
 end
 
 func _distribute_amounts{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
-    amounts_index : felt, amounts_len : felt, amounts : Uint256*, owner : felt, tokens : felt*
+    amounts_index : felt,
+    amounts_len : felt,
+    amounts : Uint256*,
+    whitelisted_user : felt,
+    tokens : felt*,
 ):
     if amounts_index == amounts_len:
         return ()
     end
 
     IERC20.transfer(
-        contract_address=tokens[amounts_index], recipient=owner, amount=amounts[amounts_index]
+        contract_address=tokens[amounts_index],
+        recipient=whitelisted_user,
+        amount=amounts[amounts_index],
     )
 
     _distribute_amounts(
         amounts_index=amounts_index + 1,
         amounts_len=amounts_len,
         amounts=amounts,
-        owner=owner,
+        whitelisted_user=whitelisted_user,
         tokens=tokens,
     )
     return ()
