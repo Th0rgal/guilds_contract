@@ -120,71 +120,6 @@
     {
         "inputs": [
             {
-                "name": "tokens_index",
-                "type": "felt"
-            },
-            {
-                "name": "tokens_len",
-                "type": "felt"
-            },
-            {
-                "name": "tokens",
-                "type": "felt*"
-            },
-            {
-                "name": "token_weights_len",
-                "type": "felt"
-            },
-            {
-                "name": "token_weights",
-                "type": "felt*"
-            }
-        ],
-        "name": "_get_token_weights",
-        "outputs": [],
-        "stateMutability": "view",
-        "type": "function"
-    },
-    {
-        "inputs": [
-            {
-                "name": "tokens_len",
-                "type": "felt"
-            },
-            {
-                "name": "tokens",
-                "type": "felt*"
-            }
-        ],
-        "name": "get_token_weights",
-        "outputs": [
-            {
-                "name": "token_weights_len",
-                "type": "felt"
-            },
-            {
-                "name": "token_weights",
-                "type": "felt*"
-            }
-        ],
-        "stateMutability": "view",
-        "type": "function"
-    },
-    {
-        "inputs": [],
-        "name": "get_total_weight",
-        "outputs": [
-            {
-                "name": "total_weight",
-                "type": "felt"
-            }
-        ],
-        "stateMutability": "view",
-        "type": "function"
-    },
-    {
-        "inputs": [
-            {
                 "name": "owners_len",
                 "type": "felt"
             },
@@ -198,14 +133,6 @@
             },
             {
                 "name": "tokens",
-                "type": "felt*"
-            },
-            {
-                "name": "token_weights_len",
-                "type": "felt"
-            },
-            {
-                "name": "token_weights",
                 "type": "felt*"
             },
             {

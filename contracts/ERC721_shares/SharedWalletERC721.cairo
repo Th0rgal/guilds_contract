@@ -55,10 +55,6 @@ func _token_reserves(token: felt) -> (res : Uint256):
 end
 
 @storage_var
-func _token_weights(token : felt) -> (res : felt):
-end
-
-@storage_var
 func _share_certificate() -> (res : felt):
 end
 
@@ -174,97 +170,6 @@ func get_tokens{
     return (tokens_len=tokens_len, tokens=tokens)
 end
 
-@view
-func _get_token_weights{
-        syscall_ptr : felt*,
-        pedersen_ptr : HashBuiltin*,
-        range_check_ptr
-    }(
-        tokens_index : felt,
-        tokens_len : felt,
-        tokens : felt*,
-        token_weights_len : felt,
-        token_weights : felt*
-    ):
-    if tokens_index == tokens_len:
-        return ()
-    end
-
-    let (token_weight) = _token_weights.read(token=tokens[tokens_index])
-    assert token_weights[tokens_index] = token_weight
-
-    _get_token_weights(
-        tokens_index=tokens_index + 1, 
-        tokens_len=tokens_len, 
-        tokens=tokens,
-        token_weights_len=token_weights_len,
-        token_weights=token_weights
-    )
-    return ()
-end
-
-@view
-func get_token_weights{
-        syscall_ptr : felt*,
-        pedersen_ptr : HashBuiltin*,
-        range_check_ptr
-    }(
-        tokens_len : felt,
-        tokens : felt*
-    ) -> (
-        token_weights_len : felt,
-        token_weights : felt*
-    ):
-    alloc_locals
-    let (local token_weights) = alloc()
-    if tokens_len == 0:
-        return (token_weights_len=tokens_len, token_weights=token_weights)
-    end
-
-    # Recursively add owners from storage to the owners array
-    _get_token_weights(
-        tokens_index=0, 
-        tokens_len=tokens_len, 
-        tokens=tokens, 
-        token_weights_len=tokens_len, 
-        token_weights=token_weights
-    )
-    return (token_weights_len=tokens_len, token_weights=token_weights)
-end
-
-func _get_total_weight{
-        syscall_ptr : felt*,
-        pedersen_ptr : HashBuiltin*,
-        range_check_ptr
-    }(
-        token_weights : felt*,
-        token_weights_len : felt
-    ) -> (
-        total_weight : felt
-    ):
-    if token_weights_len == 0:
-        return (total_weight=0)
-    end
-
-    let (total_weight) = _get_total_weight(token_weights=token_weights + 1, token_weights_len=token_weights_len - 1)
-
-    return (total_weight=[token_weights] + total_weight)
-end
-
-@view
-func get_total_weight{
-        syscall_ptr : felt*,
-        pedersen_ptr : HashBuiltin*,
-        range_check_ptr
-    }() -> (total_weight : felt):
-    let (tokens_len, tokens) = get_tokens()
-    let (token_weights_len, token_weights) = get_token_weights(tokens_len, tokens)
-    
-    let (total_weight) = _get_total_weight(token_weights=token_weights, token_weights_len=token_weights_len)
-
-    return (total_weight=total_weight)
-end
-
 #
 # Guards
 #
@@ -296,24 +201,14 @@ func constructor{
         owners : felt*,
         tokens_len : felt,
         tokens : felt*,
-        token_weights_len : felt,
-        token_weights : felt*,
         oracle : felt,
         share_certificate : felt
     ):
-    with_attr error_message("SW Error: Tokens length not equal to weights length"):
-        assert tokens_len = token_weights_len
-    end
+
     _owners_len.write(value=owners_len)
     _set_owners(owners_index=0, owners_len=owners_len, owners=owners)
     _tokens_len.write(value=tokens_len)
     _set_tokens(tokens_index=0, tokens_len=tokens_len, tokens=tokens)
-    _set_token_weights(
-        tokens_index=0, 
-        tokens_len=tokens_len, 
-        tokens=tokens,
-        token_weights=token_weights
-    )
     _price_oracle.write(oracle)
     _share_certificate.write(share_certificate)
     return ()
@@ -504,33 +399,6 @@ func _set_tokens{
 
     # Recursively write the rest
     _set_tokens(tokens_index=tokens_index + 1, tokens_len=tokens_len, tokens=tokens + 1)
-    return ()
-end
-
-func _set_token_weights{
-        syscall_ptr : felt*,
-        pedersen_ptr : HashBuiltin*,
-        range_check_ptr,
-    }(
-        tokens_index : felt,
-        tokens_len : felt,
-        tokens : felt*,
-        token_weights : felt*
-    ):
-    if tokens_index == tokens_len:
-        return ()
-    end
-
-     # Write the current iteration to storage
-    _token_weights.write(token=[tokens], value=[token_weights])
-
-    # Recursively write the rest
-    _set_token_weights(
-        tokens_index=tokens_index + 1, 
-        tokens_len=tokens_len,
-        tokens=tokens + 1,
-        token_weights=token_weights + 1
-    )
     return ()
 end
 
