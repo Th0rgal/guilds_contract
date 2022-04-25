@@ -36,10 +36,6 @@ func _whitelisted_len() -> (res : felt):
 end
 
 @storage_var
-func _whitelisted(index : felt) -> (res : felt):
-end
-
-@storage_var
 func _is_whitelisted_user(whitelisted_user : felt) -> (res : felt):
 end
 
@@ -69,48 +65,6 @@ func get_is_whitelisted{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_
 ) -> (value : felt):
     let (value) = _is_whitelisted_user.read(whitelisted_user_address)
     return (value)
-end
-
-@view
-func get_whitelisted_len{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}() -> (
-    whitelisted_len : felt
-):
-    let (whitelisted_len) = _whitelisted_len.read()
-    return (whitelisted_len=whitelisted_len)
-end
-
-func _get_whitelisted{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
-    whitelisted_index : felt, whitelisted_len : felt, whitelisted : felt*
-):
-    if whitelisted_index == whitelisted_len:
-        return ()
-    end
-
-    let (whitelisted_user) = _whitelisted.read(index=whitelisted_index)
-    assert whitelisted[whitelisted_index] = whitelisted_user
-
-    _get_whitelisted(
-        whitelisted_index=whitelisted_index + 1,
-        whitelisted_len=whitelisted_len,
-        whitelisted=whitelisted,
-    )
-    return ()
-end
-
-@view
-func get_whitelisted{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}() -> (
-    whitelisted_len : felt, whitelisted : felt*
-):
-    alloc_locals
-    let (whitelisted) = alloc()
-    let (whitelisted_len) = _whitelisted_len.read()
-    if whitelisted_len == 0:
-        return (whitelisted_len=whitelisted_len, whitelisted=whitelisted)
-    end
-
-    # Recursively add whitelisted from storage to the whitelisted array
-    _get_whitelisted(whitelisted_index=0, whitelisted_len=whitelisted_len, whitelisted=whitelisted)
-    return (whitelisted_len=whitelisted_len, whitelisted=whitelisted)
 end
 
 func _get_tokens{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
@@ -170,8 +124,9 @@ func constructor{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_p
     token_weights : felt*,
     share_certificate : felt,
 ):
-    _whitelisted_len.write(value=whitelisted_len)
-    _set_whitelisted(whitelisted_index=0, whitelisted_len=whitelisted_len, whitelisted=whitelisted)
+    _set_whitelisted(
+        whitelisted_index=0, whitelisted_len=whitelisted_len, whitelisted=whitelisted, value=TRUE
+    )
     _tokens_len.write(value=tokens_len)
     _set_tokens(tokens_index=0, tokens_len=tokens_len, tokens=tokens)
     _share_certificate.write(share_certificate)
@@ -186,6 +141,7 @@ func mint{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}():
     IShareCertificate.mint(
         contract_address=share_certificate, owner=caller_address, share=Uint256(0, 7)
     )
+    _is_whitelisted_user.write(caller_address, FALSE)
     return ()
 end
 
@@ -193,12 +149,14 @@ end
 func add_whitelisted{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
     whitelisted_len : felt, whitelisted : felt*
 ):
-    only_in_whitelisted()
+    # todo
+    # only_in_whitelisted()
     let (current_whitelisted_len) = _whitelisted_len.read()
     _set_whitelisted(
         whitelisted_index=current_whitelisted_len,
         whitelisted_len=current_whitelisted_len + whitelisted_len,
         whitelisted=whitelisted,
+        value=TRUE,
     )
     return ()
 end
@@ -297,21 +255,21 @@ end
 #
 
 func _set_whitelisted{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
-    whitelisted_index : felt, whitelisted_len : felt, whitelisted : felt*
+    whitelisted_index : felt, whitelisted_len : felt, whitelisted : felt*, value : felt
 ):
     if whitelisted_index == whitelisted_len:
         return ()
     end
 
     # Write the current iteration to storage
-    _whitelisted.write(index=whitelisted_index, value=[whitelisted])
-    _is_whitelisted_user.write(whitelisted_user=[whitelisted], value=TRUE)
+    _is_whitelisted_user.write(whitelisted_user=[whitelisted], value=value)
 
     # Recursively write the rest
     _set_whitelisted(
         whitelisted_index=whitelisted_index + 1,
         whitelisted_len=whitelisted_len,
         whitelisted=whitelisted + 1,
+        value=TRUE,
     )
     return ()
 end
