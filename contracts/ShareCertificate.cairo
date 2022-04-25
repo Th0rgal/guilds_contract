@@ -198,6 +198,18 @@ func get_certificate_data{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, rang
 end
 
 @view
+func get_certificate_data_field{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
+    owner : felt,
+    field : felt
+) -> (
+    data : felt
+):
+    let (token_id) = _certificate_id.read(owner)
+    let (data) = _certificate_data_field.read(token_id, field)
+    return (data)
+end
+
+@view
 func get_shares{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
     owner : felt
 ) -> (share : Uint256):
