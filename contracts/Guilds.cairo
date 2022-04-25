@@ -55,6 +55,10 @@ end
 func _share_certificate() -> (res : felt):
 end
 
+@storage_var
+func _guild_name() -> (name : felt):
+end
+
 #
 # Getters
 #
@@ -123,6 +127,7 @@ func constructor{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_p
     token_weights_len : felt,
     token_weights : felt*,
     share_certificate : felt,
+    guild_name : felt,
 ):
     _set_whitelisted(
         whitelisted_index=0, whitelisted_len=whitelisted_len, whitelisted=whitelisted, value=TRUE
@@ -130,6 +135,7 @@ func constructor{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_p
     _tokens_len.write(value=tokens_len)
     _set_tokens(tokens_index=0, tokens_len=tokens_len, tokens=tokens)
     _share_certificate.write(share_certificate)
+    _guild_name.write(guild_name)
     return ()
 end
 
@@ -522,6 +528,12 @@ func _calculate_initial_share{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, 
         initial_share=new_share,
     )
     return (new_share=new_share)
+end
+
+@view
+func name{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}() -> (name : felt):
+    let (output) = _guild_name.read()
+    return (output)
 end
 
 @view
