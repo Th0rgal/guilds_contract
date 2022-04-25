@@ -206,7 +206,6 @@ end
 #
 # Constructor
 #
-
 @constructor
 func constructor{
         syscall_ptr: felt*,

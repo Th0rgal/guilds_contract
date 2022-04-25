@@ -180,6 +180,32 @@ async def test_deployed_shared_wallet(contract_factory):
     ]
 
 @pytest.mark.asyncio
+async def test_mint(contract_factory):
+    """Test add owners of shared wallet."""
+    (
+        starknet,
+        account1,
+        account2,
+        erc20_1,
+        erc20_2,
+        share_certificate,
+        shared_wallet,
+    ) = contract_factory
+
+    execution_info = await shared_wallet.get_is_whitelisted(account1.contract_address).call()
+    assert execution_info.result == (1,)
+
+    await signer1.send_transaction(
+        account=account1,
+        to=shared_wallet.contract_address,
+        selector_name="mint",
+        calldata=[],
+    )
+
+    execution_info = await shared_wallet.get_is_whitelisted(account1.contract_address).call()
+    assert execution_info.result == (0,)
+
+@pytest.mark.asyncio
 async def test_whitelist(contract_factory):
     """Test add owners of shared wallet."""
     (
