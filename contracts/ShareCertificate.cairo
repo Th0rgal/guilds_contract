@@ -344,6 +344,7 @@ func mint{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
     let (new_total_shares, _) = uint256_add(current_total_shares, share)
     _total_shares.write(new_total_shares)
     ERC721_mint(owner, new_certificate_id)
+    add_guild_to_user(owner, guild)
     return ()
 end
 
