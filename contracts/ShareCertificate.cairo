@@ -51,7 +51,7 @@ end
 #
 
 @storage_var
-func _certificate_id(owner : felt) -> (token_id : Uint256):
+func _certificate_id(owner : felt, guild : felt) -> (token_id : Uint256):
 end
 
 @storage_var
@@ -67,7 +67,7 @@ func _share(token_id : Uint256) -> (res : Uint256):
 end
 
 @storage_var
-func _total_shares() -> (res : Uint256):
+func _total_shares(guild : felt) -> (res : Uint256):
 end
 
 @storage_var
@@ -183,9 +183,10 @@ end
 
 @view
 func get_certificate_id{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
-    owner : felt
+    owner : felt,
+    guild : felt
 ) -> (token_id : Uint256):
-    let (value) = _certificate_id.read(owner)
+    let (value) = _certificate_id.read(owner, guild)
     return (value)
 end
 
@@ -200,29 +201,31 @@ end
 @view
 func get_value{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
     owner : felt,
+    guild : felt,
     field : felt
 ) -> (
     value : felt
 ):
-    let (token_id) = _certificate_id.read(owner)
+    let (token_id) = _certificate_id.read(owner, guild)
     let (value) = _certificate_data_field.read(token_id, field)
     return (value)
 end
 
 @view
 func get_shares{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
-    owner : felt
+    token_id : Uint256
 ) -> (share : Uint256):
-    let (token_id) = _certificate_id.read(owner)
     let (share) = _share.read(token_id)
     return (share)
 end
 
 @view
-func get_total_shares{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}() -> (
+func get_total_shares{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
+    guild : felt
+) -> (
     total_shares : Uint256
 ):
-    let (total_shares) = _total_shares.read()
+    let (total_shares) = _total_shares.read(guild=guild)
     return (total_shares)
 end
 
@@ -324,7 +327,7 @@ func mint{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
     field_len : felt,
     field : felt*,
     values_len : felt,
-    values : felt* 
+    values : felt*,
 ):
     alloc_locals
     
@@ -333,60 +336,62 @@ func mint{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
     end
 
     # todo check guild is caller
-    let (certificate_id) = _certificate_id.read(owner)
+    let (certificate_id) = _certificate_id.read(owner, guild)
     let (new_certificate_id, _) = uint256_add(certificate_id, Uint256(1, 0))
     let data = CertificateData(token_id=new_certificate_id, share=share, owner=owner, guild=guild)
-    _certificate_id.write(owner, new_certificate_id)
+    _certificate_id.write(owner, guild, new_certificate_id)
     _certificate_data.write(new_certificate_id, data)
     _write_certificate_data_field(field_len, field, values_len, values, new_certificate_id)
     _share.write(new_certificate_id, share)
-    let (current_total_shares) = _total_shares.read()
+    let (current_total_shares) = _total_shares.read(guild)
     let (new_total_shares, _) = uint256_add(current_total_shares, share)
-    _total_shares.write(new_total_shares)
+    _total_shares.write(guild, new_total_shares)
     ERC721_mint(owner, new_certificate_id)
     add_guild_to_user(owner, guild)
     return ()
 end
 
 @external
-func burn{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(owner : felt):
+func burn{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(owner : felt, token_id : Uint256):
     Ownable_only_owner()
-    let (token_id) = _certificate_id.read(owner)
     let (current_shares) = _share.read(token_id)
     _share.write(token_id, Uint256(0, 0))
-    let (current_total_shares) = _total_shares.read()
+    let (certificate_data) = _certificate_data.read(token_id)
+    let (current_total_shares) = _total_shares.read(certificate_data.guild)
     let (new_total_shares) = uint256_sub(current_total_shares, current_shares)
-    _total_shares.write(new_total_shares)
+    _total_shares.write(certificate_data.guild, new_total_shares)
     ERC721_burn(token_id)
     return ()
 end
 
 @external
 func increase_shares{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
-    owner : felt, amount : Uint256
+    owner : felt,
+    amount : Uint256,
+    guild : felt,
 ):
     Ownable_only_owner()
-    let (current_shares) = get_shares(owner)
+    let (token_id) = _certificate_id.read(owner, guild)
+    let (current_shares) = get_shares(token_id)
     let (new_share, _) = uint256_add(current_shares, amount)
-    let (certificate_id) = _certificate_id.read(owner)
-    _share.write(certificate_id, new_share)
-    let (current_total_shares) = _total_shares.read()
+    _share.write(token_id, new_share)
+    let (current_total_shares) = _total_shares.read(guild)
     let (new_total_shares, _) = uint256_add(current_total_shares, amount)
-    _total_shares.write(new_total_shares)
+    _total_shares.write(guild, new_total_shares)
     return ()
 end
 
 @external
 func decrease_shares{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
-    owner : felt, amount : Uint256
+    owner, guild : felt, amount : Uint256
 ):
     Ownable_only_owner()
-    let (current_shares) = get_shares(owner)
+    let (certificate_id) = _certificate_id.read(owner, guild)
+    let (current_shares) = get_shares(certificate_id)
     let (new_share) = uint256_sub(current_shares, amount)
-    let (certificate_id) = _certificate_id.read(owner)
     _share.write(certificate_id, new_share)
-    let (current_total_shares) = _total_shares.read()
+    let (current_total_shares) = _total_shares.read(guild)
     let (new_total_shares) = uint256_sub(current_total_shares, amount)
-    _total_shares.write(new_total_shares)
+    _total_shares.write(guild, new_total_shares)
     return ()
 end
